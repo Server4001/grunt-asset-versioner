@@ -20,65 +20,82 @@ grunt.loadNpmTasks('grunt-asset-versioner');
 ## The "asset_versioner" task
 
 ### Overview
+Grunt Asset Versioner copies JS and CSS to a new file with a unique file name. By using these new files, you benefit from the fact that a file name changes each time the file is changed. Your assets will automatically bust their own cache anytime they are updated.
+
+This plugin creates a file containing mappings between original asset file paths, and their new unique file paths. It does this to track which previous files to delete. However, you can also use this mapping file so that you don't have to reference unique file paths in your templates. Reference the original asset paths, then write code that does the conversion for you, using the mapping file.  
+
 In your project's Gruntfile, add a section named `asset_versioner` to the data object passed into `grunt.initConfig()`.
 
 ```js
 grunt.initConfig({
   asset_versioner: {
-    options: {
-      // Task-specific options go here.
-    },
-    your_target: {
-      // Target-specific file lists and/or options go here.
-    },
-  },
+    javascript: {
+      options: {
+        mappingFile: './mappings/js-mappings.json'
+      },
+      src: [
+        './js/**/*'
+      ],
+      dest: './built-js'
+    }
+  }
 });
 ```
 
 ### Options
 
-#### options.separator
+#### options.mappingFile
 Type: `String`
-Default value: `',  '`
+Default value: `'./mappings.json'`
 
-A string value that is used to do something with whatever.
-
-#### options.punctuation
-Type: `String`
-Default value: `'.'`
-
-A string value that is used to do something else with whatever else.
+The path to the file containing the mappings between original and hashed files.
 
 ### Usage Examples
 
 #### Default Options
-In this example, the default options are used to do something with whatever. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result would be `Testing, 1 2 3.`
+In this example, the default options will create a mapping file at `./mappings.json`. We will load all files matching the `./js/**/*.js` glob, and copy them to the `./build/js` directory, using unique file names.
 
 ```js
 grunt.initConfig({
   asset_versioner: {
-    options: {},
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
+    javascript: {
+      options: {},
+      src: [
+        './js/**/*.js'
+      ],
+      dest: './build/js'
+    }
+  }
 });
 ```
 
 #### Custom Options
-In this example, custom options are used to do something else with whatever else. So if the `testing` file has the content `Testing` and the `123` file had the content `1 2 3`, the generated result in this case would be `Testing: 1 2 3 !!!`
+In this example, custom options are used to specify the mapping file path that should be used. We want CSS to use one mapping file, and JS to use another.
 
 ```js
 grunt.initConfig({
   asset_versioner: {
-    options: {
-      separator: ': ',
-      punctuation: ' !!!',
+    javascript: {
+      options: {
+        mappingFile: './mappings/js-mappings.json'
+      },
+      src: [
+        './js/**/*.js',
+        './assets/javascript/*.js'
+      ],
+      dest: './build/js'
     },
-    files: {
-      'dest/default_options': ['src/testing', 'src/123'],
-    },
-  },
+    stylesheets: {
+      options: {
+        mappingFile: './mappings/css-mappings.json'
+      },
+      src: [
+        './css/**/*.css',
+        './assets/stylesheets/*.css'
+      ],
+      dest: './build/css'
+    }
+  }
 });
 ```
 
@@ -86,4 +103,4 @@ grunt.initConfig({
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
 
 ## Release History
-_(Nothing yet)_
+0.1.0 - Initial version
