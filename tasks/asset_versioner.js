@@ -30,27 +30,44 @@ module.exports = function(grunt) {
     } else if (filePath.substr(-4) === '.css') {
       fileExtension = '.css';
     } else {
-      grunt.log.error('File has unsupported file extension: ' + filePath);
+      grunt.fail.warn('File has unsupported file extension: ' + filePath, 6);
       fileExtension = '';
     }
 
     return fileExtension;
   }
 
-  grunt.registerMultiTask('asset_versioner', 'Versions your JS and CSS assets.', function() {
-    // TODO : Split this up into separate methods.
+  /**
+   * Create a file name consisting of a hash based on the original file name and current micro-time.
+   *
+   * @param {String} filePath
+   *
+   * @returns {String} - The hashed file name.
+   */
+  function getHashedFilePath(filePath) {
+    const md5Hash = crypto.createHash('md5');
+    const fileExtension = getFileExtension(filePath);
 
-    // Merge task-specific and/or target-specific options with these defaults.
+    md5Hash.update(filePath + (new Date).getTime());
+
+    return md5Hash.digest('hex') + fileExtension;
+  }
+
+  grunt.registerMultiTask('asset_versioner', 'Versions your JS and CSS assets.', function() {
+    // Merge default options with existing ones.
     var options = this.options({
-      mappingFile: './mappings.json',
+      mappingFile: './mappings.json'
     });
 
-    console.log(util.inspect(options, {showHidden: true, depth: null})); // TODO : REMOVE.
-    console.log(util.inspect(this.files, {showHidden: true, depth: null}));
-
-    // Ensure the mapping file is created.
     if (!grunt.file.exists(options.mappingFile)) {
+      // Create the mapping file. Use an empty JSON object as the file contents.
       grunt.file.write(options.mappingFile, '{}');
+    }
+
+    let mappings = grunt.file.readJSON(options.mappingFile);
+
+    if ((typeof mappings) !== 'object') {
+      grunt.fail.fatal('Unable to parse mapping file, and read as JSON: ' + options.mappingFile, 3);
     }
 
     // Iterate over the list of file paths.
@@ -62,40 +79,22 @@ module.exports = function(grunt) {
           return null;
         }
 
-        const md5Hash = crypto.createHash('md5');
-        const fileExtension = getFileExtension(filePath);
+        const newFilePath = file.dest + '/' + getHashedFilePath(filePath);
 
-        // Create a hash based on the file name and current micro-time.
-        md5Hash.update(filePath + (new Date).getTime());
-
-        const newFilePath = file.dest + '/' + md5Hash.digest('hex') + fileExtension;
+        grunt.log.debug('Used file path "' + filePath + '" to create hashed file path: "' + newFilePath + '".');
 
         return {
           new_file_path: newFilePath,
-          old_file_path: filePath,
+          old_file_path: filePath
         };
       }).filter((element) => {
+        // Remove any null values that were previously not a path to a valid file.
         return (element !== null);
       }).forEach((pathMapping) => {
-        console.log(pathMapping);
+        // Copy the original file to the new file path.
+        grunt.file.copy(pathMapping.old_file_path, pathMapping.new_file_path);
+        grunt.log.debug('Copied "' + pathMapping.old_file_path + '" to "' + pathMapping.new_file_path + '".');
       });
-
-      // grunt.file.copy(srcpath, destpath [, options])
-      // var options = {
-      //   // If an encoding is not specified, default to grunt.file.defaultEncoding.
-      //   // If null, the `process` function will receive a Buffer instead of String.
-      //   encoding: encodingName,
-      //   // The source file contents, source file path, and destination file path
-      //   // are passed into this function, whose return value will be used as the
-      //   // destination file's contents. If this function returns `false`, the file
-      //   // copy will be aborted.
-      //   process: processFunction,
-      //   // These optional globbing patterns will be matched against the filepath
-      //   // (not the filename) using grunt.file.isMatch. If any specified globbing
-      //   // pattern matches, the file won't be processed via the `process` function.
-      //   // If `true` is specified, processing will be prevented.
-      //   noProcess: globbingPatterns
-      // };
 
     });
   });
