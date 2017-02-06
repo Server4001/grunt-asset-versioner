@@ -8,7 +8,6 @@
 
 'use strict';
 
-const util = require('util'); // TODO : REMOVE.
 const crypto = require('crypto');
 
 module.exports = function(grunt) {
@@ -65,6 +64,7 @@ module.exports = function(grunt) {
     }
 
     let mappings = grunt.file.readJSON(options.mappingFile);
+    let updateMappingFile = false;
 
     if ((typeof mappings) !== 'object') {
       grunt.fail.fatal('Unable to parse mapping file, and read as JSON: ' + options.mappingFile, 3);
@@ -94,8 +94,29 @@ module.exports = function(grunt) {
         // Copy the original file to the new file path.
         grunt.file.copy(pathMapping.old_file_path, pathMapping.new_file_path);
         grunt.log.debug('Copied "' + pathMapping.old_file_path + '" to "' + pathMapping.new_file_path + '".');
+
+        if (mappings[pathMapping.old_file_path] !== undefined) {
+          // A hashed version of this file previously existed, so delete it.
+          const previousFilePath = mappings[pathMapping.old_file_path];
+
+          if (grunt.file.exists(previousFilePath)) {
+            grunt.file.delete(previousFilePath);
+
+            grunt.log.debug('Deleted pre-existing hashed file for "' + pathMapping.old_file_path + '" at "' +
+                previousFilePath + '".');
+          }
+        }
+
+        // Update the file path mappings.
+        mappings[pathMapping.old_file_path] = pathMapping.new_file_path;
+        updateMappingFile = true;
       });
 
+      if (updateMappingFile) {
+        // Update the mappings file.
+        grunt.file.write(options.mappingFile, JSON.stringify(mappings));
+        grunt.log.debug('Updated mapping file with new file path mappings.');
+      }
     });
   });
 
