@@ -37,8 +37,13 @@ module.exports = function(grunt) {
 
       console.log(fileGlob.orig.src); // TODO : REMOVE.
       // Find all file paths that match the glob.
+      // TODO : Change this out for a mapping of [original_file_path => new_file_path].
       const hashes = grunt.file.expand(fileGlob.orig.src).map((filePath) => {
-        // TODO : Check if this is a file. EG:  './js/something'.
+        // Make sure this is a file, not a directory or symlink.
+        if (!grunt.file.isFile(filePath)) {
+          return null;
+        }
+
         let fileExtension;
         let md5Hash = crypto.createHash('md5');
 
@@ -59,6 +64,8 @@ module.exports = function(grunt) {
         }
 
         return md5Hash.digest('hex') + fileExtension;
+      }).filter((element) => {
+        return (element !== null);
       });
 
       console.log(hashes);
