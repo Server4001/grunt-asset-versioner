@@ -10,11 +10,28 @@
 
 const util = require('util'); // TODO : REMOVE.
 const crypto = require('crypto');
+const path = require('path');
 
 module.exports = function(grunt) {
 
-  // Please see the Grunt documentation for more information regarding task
-  // creation: http://gruntjs.com/creating-tasks
+  function getFileExtension(filePath) {
+    let fileExtension;
+
+    if (filePath.substr(-7) === '.min.js') {
+      fileExtension = '.min.js';
+    } else if (filePath.substr(-8) === '.min.css') {
+      fileExtension = '.min.css';
+    } else if (filePath.substr(-3) === '.js') {
+      fileExtension = '.js';
+    } else if (filePath.substr(-4) === '.css') {
+      fileExtension = '.css';
+    } else {
+      grunt.log.error('File has unsupported file extension: ' + filePath);
+      fileExtension = '';
+    }
+
+    return fileExtension;
+  }
 
   grunt.registerMultiTask('asset_versioner', 'Versions your JS and CSS assets.', function() {
     // TODO : Split this up into separate methods.
@@ -44,26 +61,19 @@ module.exports = function(grunt) {
           return null;
         }
 
-        let fileExtension;
-        let md5Hash = crypto.createHash('md5');
+        const md5Hash = crypto.createHash('md5');
+        const fileName = path.basename(filePath);
+        const fileExtension = getFileExtension(filePath);
 
         // Create a hash based on the file name and current micro-time.
         md5Hash.update(filePath + (new Date).getTime());
 
-        if (filePath.substr(-7) === '.min.js') {
-          fileExtension = '.min.js';
-        } else if (filePath.substr(-8) === '.min.css') {
-          fileExtension = '.min.css';
-        } else if (filePath.substr(-3) === '.js') {
-          fileExtension = '.js';
-        } else if (filePath.substr(-4) === '.css') {
-          fileExtension = '.css';
-        } else {
-          grunt.log.error('File has unsupported file extension: ' + filePath);
-          fileExtension = '';
-        }
+        const newFilePath = filePath.replace(fileName, md5Hash.digest('hex') + fileExtension);
 
-        return md5Hash.digest('hex') + fileExtension;
+        return {
+          new_file_path: newFilePath,
+          old_file_path: filePath,
+        };
       }).filter((element) => {
         return (element !== null);
       });
