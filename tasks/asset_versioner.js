@@ -10,10 +10,14 @@
 
 const util = require('util'); // TODO : REMOVE.
 const crypto = require('crypto');
-const path = require('path');
 
 module.exports = function(grunt) {
 
+  /**
+   * @param {String} filePath
+   *
+   * @returns {String} - The file extension
+   */
   function getFileExtension(filePath) {
     let fileExtension;
 
@@ -37,38 +41,34 @@ module.exports = function(grunt) {
     // TODO : Split this up into separate methods.
 
     // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({ // TODO : Add options.
-      punctuation: '.',
-      separator: ', '
+    var options = this.options({
+      mappingFile: './mappings.json',
     });
 
     console.log(util.inspect(options, {showHidden: true, depth: null})); // TODO : REMOVE.
+    console.log(util.inspect(this.files, {showHidden: true, depth: null}));
 
-    // Iterate over the list of file globs.
-    this.files.forEach(function(fileGlob) {
-      // TODO : REMOVE:
-      // console.log(util.inspect(fileGlob, {showHidden: true, depth: null}));
-      // console.log(fileGlob.orig.src);
-      // console.log(fileGlob.orig.dest);
-      // grunt.log.writeln('blah');
+    // Ensure the mapping file is created.
+    if (!grunt.file.exists(options.mappingFile)) {
+      grunt.file.write(options.mappingFile, '{}');
+    }
 
-      console.log(fileGlob.orig.src); // TODO : REMOVE.
-      // Find all file paths that match the glob.
-      // TODO : Change this out for a mapping of [original_file_path => new_file_path].
-      const hashes = grunt.file.expand(fileGlob.orig.src).map((filePath) => {
+    // Iterate over the list of file paths.
+    this.files.forEach(function(file) {
+      // Iterate over all files that match the file path.
+      file.src.map((filePath) => {
         // Make sure this is a file, not a directory or symlink.
         if (!grunt.file.isFile(filePath)) {
           return null;
         }
 
         const md5Hash = crypto.createHash('md5');
-        const fileName = path.basename(filePath);
         const fileExtension = getFileExtension(filePath);
 
         // Create a hash based on the file name and current micro-time.
         md5Hash.update(filePath + (new Date).getTime());
 
-        const newFilePath = filePath.replace(fileName, md5Hash.digest('hex') + fileExtension);
+        const newFilePath = file.dest + '/' + md5Hash.digest('hex') + fileExtension;
 
         return {
           new_file_path: newFilePath,
@@ -76,9 +76,10 @@ module.exports = function(grunt) {
         };
       }).filter((element) => {
         return (element !== null);
+      }).forEach((pathMapping) => {
+        console.log(pathMapping);
       });
 
-      console.log(hashes);
       // grunt.file.copy(srcpath, destpath [, options])
       // var options = {
       //   // If an encoding is not specified, default to grunt.file.defaultEncoding.
@@ -96,12 +97,6 @@ module.exports = function(grunt) {
       //   noProcess: globbingPatterns
       // };
 
-      // grunt.file.delete(filepath [, options])
-      // var options = {
-      //   // Enable deleting outside the current working directory. This option may
-      //   // be overridden by the --force command-line option.
-      //   force: true
-      // };
     });
   });
 
