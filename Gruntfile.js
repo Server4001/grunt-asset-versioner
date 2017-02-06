@@ -30,21 +30,15 @@ module.exports = function(grunt) {
 
     // Configuration to be run (and then tested).
     asset_versioner: {
-      default_options: {
-        options: {
-        },
-        files: {
-          'tmp/default_options': ['test/fixtures/testing', 'test/fixtures/123']
-        }
-      },
       custom_options: {
         options: {
-          separator: ': ',
-          punctuation: ' !!!'
+          mappingFile: 'tmp/js-mappings.json'
         },
-        files: {
-          'tmp/custom_options': ['test/fixtures/testing', 'test/fixtures/123']
-        }
+        src: [
+          'test/fixtures/testing.css',
+          'test/fixtures/123.js'
+        ],
+        dest: 'tmp'
       }
     },
 
@@ -68,6 +62,6 @@ module.exports = function(grunt) {
   grunt.registerTask('test', ['clean', 'asset_versioner', 'nodeunit']);
 
   // By default, lint and run all tests.
-  grunt.registerTask('default', ['jshint'/*, 'test'*/]);
+  grunt.registerTask('default', ['jshint', 'test']);
 
 };

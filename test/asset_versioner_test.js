@@ -27,21 +27,26 @@ exports.asset_versioner = {
     // setup here if necessary
     done();
   },
-  default_options: function(test) {
-    test.expect(1);
+  custom_options: function(test) {
+    test.expect(6);
 
-    var actual = grunt.file.read('tmp/default_options');
-    var expected = grunt.file.read('test/expected/default_options');
+    var javascripts = grunt.file.expand('tmp/*.js');
+    var stylesheets = grunt.file.expand('tmp/*.css');
+
+    test.equal(1, javascripts.length);
+    test.equal(1, stylesheets.length);
+
+    var actual = grunt.file.read(javascripts[0]);
+    var expected = grunt.file.read('test/fixtures/123.js');
     test.equal(actual, expected, 'should describe what the default behavior is.');
 
-    test.done();
-  },
-  custom_options: function(test) {
-    test.expect(1);
+    actual = grunt.file.read(stylesheets[0]);
+    expected = grunt.file.read('test/fixtures/testing.css');
+    test.equal(actual, expected, 'should describe what the default behavior is.');
 
-    var actual = grunt.file.read('tmp/custom_options');
-    var expected = grunt.file.read('test/expected/custom_options');
-    test.equal(actual, expected, 'should describe what the custom option(s) behavior is.');
+    var mapping = grunt.file.readJSON('tmp/js-mappings.json');
+    test.equal(mapping['test/fixtures/123.js'], javascripts[0]);
+    test.equal(mapping['test/fixtures/testing.css'], stylesheets[0]);
 
     test.done();
   },
