@@ -8,7 +8,9 @@
 
 'use strict';
 
-const util = require('util');
+const util = require('util'); // TODO : REMOVE.
+const crypto = require('crypto');
+const path = require('path');
 
 module.exports = function(grunt) {
 
@@ -17,38 +19,64 @@ module.exports = function(grunt) {
 
   grunt.registerMultiTask('asset_versioner', 'Versions your JS and CSS assets.', function() {
     // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({
+    var options = this.options({ // TODO : Add options.
       punctuation: '.',
       separator: ', '
     });
 
-    // console.log(util.inspect(this.files[0], {showHidden: true, depth: null}));
-    // console.log(this.files[0].src);
-    // console.log(util.inspect(options, {showHidden: true, depth: null}));
+    console.log(util.inspect(options, {showHidden: true, depth: null})); // TODO : REMOVE.
 
-    this.files.forEach((f) => {
-      console.log(util.inspect(f, {showHidden: true, depth: null}));
-      console.log(f.orig.src);
-      console.log(f.orig.dest);
-      grunt.log.writeln('blah');
+    // Iterate over the list of file globs.
+    this.files.forEach(function(fileGlob) {
+      // TODO : REMOVE:
+      // console.log(util.inspect(fileGlob, {showHidden: true, depth: null}));
+      // console.log(fileGlob.orig.src);
+      // console.log(fileGlob.orig.dest);
+      // grunt.log.writeln('blah');
 
-      // Warn on and remove non-existing files.
-      // grunt.file.recurse(rootdir, callback);
-      var src = f.src.filter(function(filepath) {
-        if (!grunt.file.exists(filepath)) {
-          grunt.log.warn('Source file "' + filepath + '" not found.');
-          return false;
-        } else {
-          grunt.log.writeln('found file path: ' + filepath);
-          return true;
-        }
+      console.log(fileGlob.orig.src); // TODO : REMOVE.
+      // Find all file paths that match the glob.
+      const hashes = grunt.file.expand(fileGlob.orig.src).map((filePath) => {
+        let md5Hash = crypto.createHash('md5');
+
+        // Create a hash based on the file name and current micro-time.
+        md5Hash.update(filePath + (new Date).getTime());
+
+        // TODO : Add file extension.
+
+        return md5Hash.digest('hex');
       });
+
+      console.log(hashes);
+      // grunt.file.copy(srcpath, destpath [, options])
+      var options = {
+        // If an encoding is not specified, default to grunt.file.defaultEncoding.
+        // If null, the `process` function will receive a Buffer instead of String.
+        encoding: encodingName,
+        // The source file contents, source file path, and destination file path
+        // are passed into this function, whose return value will be used as the
+        // destination file's contents. If this function returns `false`, the file
+        // copy will be aborted.
+        process: processFunction,
+        // These optional globbing patterns will be matched against the filepath
+        // (not the filename) using grunt.file.isMatch. If any specified globbing
+        // pattern matches, the file won't be processed via the `process` function.
+        // If `true` is specified, processing will be prevented.
+        noProcess: globbingPatterns
+      };
+
+      // grunt.file.delete(filepath [, options])
+      var options = {
+        // Enable deleting outside the current working directory. This option may
+        // be overridden by the --force command-line option.
+        force: true
+      };
     });
 
     // // Iterate over all specified file groups.
     // this.files.forEach(function(f) {
     //   // Concat specified files.
-    //   var src = f.src.filter(function(filepath) {
+    //   var src = f.orig.src.filter(function(filepath) {
     //     // Warn on and remove invalid source files (if nonull was set).
     //     if (!grunt.file.exists(filepath)) {
     //       grunt.log.warn('Source file "' + filepath + '" not found.');
@@ -65,7 +93,6 @@ module.exports = function(grunt) {
     //   src += options.punctuation;
     //
     //   // Write the destination file.
-    //   grunt.file.write(f.dest, src);
     //
     //   // Print a success message.
     //   grunt.log.writeln('File "' + f.dest + '" created.');
