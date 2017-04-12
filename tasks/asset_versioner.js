@@ -54,7 +54,7 @@ module.exports = function(grunt) {
 
   grunt.registerMultiTask('asset_versioner', 'Versions your JS and CSS assets.', function() {
     // Merge default options with existing ones.
-    var options = this.options({
+    const options = this.options({
       mappingFile: './mappings.json'
     });
 
